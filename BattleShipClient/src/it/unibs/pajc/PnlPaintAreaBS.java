@@ -46,10 +46,10 @@ public class PnlPaintAreaBS extends JComponent implements MouseMotionListener, M
 	public void addColpo(boolean colpito)
 	{
 		if(colpito)
-			giocatore.setMatColpiti(boardSize - giocatore.getSelectedCell().y - 1, giocatore.getSelectedCell().x, Giocatore.COLPITO);
+			giocatore.setMatColpiti(giocatore.getSelectedCell().y, giocatore.getSelectedCell().x, Giocatore.COLPITO);
 		
-		else giocatore.setMatColpiti(boardSize - giocatore.getSelectedCell().y - 1, giocatore.getSelectedCell().x, Giocatore.ACQUA);
-		
+		else 
+			giocatore.setMatColpiti(giocatore.getSelectedCell().y, giocatore.getSelectedCell().x, Giocatore.ACQUA);
 	}
 	
 	public int getBoardSize() 
@@ -271,7 +271,6 @@ public class PnlPaintAreaBS extends JComponent implements MouseMotionListener, M
 		
 		
 		if(!giocatore.getSelectedCell().equals(new Point(x - boardSize - SPACE_BETWEEN_BOARDS, y - 1)))	//controllo che la cella selezionata sia cambiata
-		//-15 e -1 perchè coordinate selectedcell vanno da 0,0
 		{
 			//deve essere nella scacchiera avversaria
 			if(x >= (boardSize + SPACE_BETWEEN_BOARDS) && x < (2*boardSize + SPACE_BETWEEN_BOARDS) && y >= 1 && y < boardSize + 1)
@@ -280,9 +279,8 @@ public class PnlPaintAreaBS extends JComponent implements MouseMotionListener, M
 				giocatore.setSelectedCell(new Point(x - boardSize - SPACE_BETWEEN_BOARDS, y - 1));	
 			}
 			else
-				giocatore.setSelectedCell(new Point(-1,-1));	//se la cella non è nella scacchiera avversaria
+				giocatore.setSelectedCell(new Point(-1,-1));//se la cella non è nella scacchiera avversaria
 		}
-		
 		
 		System.out.println("selected cell: " + giocatore.getSelectedCell().x + "." + giocatore.getSelectedCell().y);
 		

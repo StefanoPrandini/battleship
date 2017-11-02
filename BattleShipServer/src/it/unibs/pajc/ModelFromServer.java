@@ -11,7 +11,7 @@ class ModelFromServer
 	private static int NUM_NAVI = 10; //non final perchè se diverso lo modifico
 	
 	private int boardSize;
-	public Vector <Nave> flotta = new Vector <Nave>();
+	public Vector <Nave> flotta = new Vector <Nave>();	//la creo vuota
 	//la matrice delle mie navi
 	public boolean[][] matPosizioni;	
 	//la matrice con gli spari che ho effettuato
@@ -21,8 +21,8 @@ class ModelFromServer
 	public ModelFromServer(int boardSize)
 	{
 		this.boardSize = boardSize;
-		 createMat();
-		 initializeFlotta();
+		createMat();
+		initializeFlotta();
 	}
 	
 	public void createMat()
@@ -273,7 +273,7 @@ class ModelFromServer
 	public boolean isGoodShot(Point selectedCell) //controlla se il colpo dell'avversario colpisce una nave del giocatore
 	//da point a matrice inverto x e y: poi tolgo y da boardsize perchè una parte da sopra e l'altra da sotto
 	{
-		if(matPosizioni[boardSize - selectedCell.y - 1][selectedCell.x]==true)
+		if(matPosizioni[selectedCell.y][selectedCell.x]==true)
 			return true;
 		else 
 			return false;

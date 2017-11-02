@@ -91,8 +91,17 @@ public class Giocatore
 
 	public void setSelectedCell(Point selectedCell) 
 	{
-		this.selectedCell = selectedCell;
-		this.cellChanged = true;
+		if(!selectedCell.equals(this.selectedCell)) 
+		{
+			this.selectedCell = selectedCell;
+			this.cellChanged = true;
+			System.out.println("cell changed: " + this.cellChanged);
+		}
+		else
+		{
+			this.cellChanged = false;
+		}
+		
 	}
 	public boolean isCellChanged() 
 	{

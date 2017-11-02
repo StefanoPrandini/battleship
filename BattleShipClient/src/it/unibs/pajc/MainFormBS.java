@@ -72,7 +72,7 @@ public class MainFormBS
 	{
 		connect();
 		initialize(playerName);
-		manageTurns();
+		manageTurns(playerName);
 	}
 
 	private void connect()
@@ -139,40 +139,51 @@ public class MainFormBS
 		
 	}
 	
-	private void manageTurns()
+	private void manageTurns(String playerName)
 	{		
 		Runnable turnsThread = () -> {	
 			try 
 			{
-				while((boolean)inputFromServer.readObject())	//finchè server dice che la partita è in corso
+				boolean partitaInCorso = (boolean)inputFromServer.readObject();
+				
+				while(partitaInCorso == true)	//finchè server dice che la partita è in corso
 				{
-					boolean isMyTurn;
-					isMyTurn = (boolean)inputFromServer.readObject();
+					boolean isMyTurn = (boolean)inputFromServer.readObject();
 					
-					System.out.println(isMyTurn);
-						
-					while(isMyTurn)	//se è vero cicla fino a quando server dice che non è suo turno
+					System.out.println("my turn = " + isMyTurn);
+					
+					if(isMyTurn)
 					{
-						if(pnlPaint.getGiocatore().isCellChanged())
+						while(isMyTurn == true)	
+						//se è vero cicla fino a quando server dice che non è suo turno
 						{
+							while(!pnlPaint.getGiocatore().isCellChanged() || pnlPaint.getGiocatore().getSelectedCell().equals(new Point(-1,-1))) 
+							{
+								Thread.sleep(1000);
+//								System.out.println("waiting");
+							}
+							
+							//arriva qua quando cellChanged = true e cella nella scacchiera
+							pnlPaint.getGiocatore().setCellChanged(false);// una volta letta la rimetto a false, sennò resta sempre true
+							
 							Point cell = pnlPaint.getGiocatore().getSelectedCell();
-							System.out.println(cell);
+							System.out.println("cell changed: " + cell.x + "." + cell.y);
 							
-							outputToServer.writeObject(cell);
+							Request request = new Request(cell, playerName);
+							
+							outputToServer.writeObject(request);
+							
 							boolean response = (boolean)inputFromServer.readObject();
-							System.out.println(response);
-							pnlPaint.addColpo(response);	//se ritorna true aggiungo colpo true //non passo il punto perchè pnlpaint ha già la selected cell
-							
-							pnlPaint.getGiocatore().setCellChanged(false);	// una volta letta la rimetto a false, sennò resta sempre true
-						}	
-						else
-						{
-							outputToServer.writeObject(new Point(-1,-1));
+							System.out.println("colpito: " + response + " \n");
+							pnlPaint.addColpo(response);	//se ritorna true aggiungo colpo true 
+							//non passo il punto perchè pnlpaint ha già la selected cell
+														
+							isMyTurn = false;
 						}
 					}
 				}
 			} 
-			catch (ClassNotFoundException | IOException e) 
+			catch (ClassNotFoundException | IOException | InterruptedException e) 
 			{	
 				e.printStackTrace();
 			}
@@ -180,7 +191,5 @@ public class MainFormBS
 		
 		Thread t = new Thread(turnsThread);
 		t.start();
-		
 	}
-
 }

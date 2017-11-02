@@ -30,7 +30,7 @@ public class Partita implements Runnable
 	{
 		//le due connessioni hanno la loro matrice e la loro flotta
 		//in pratica ci sono i dati dei 2 giocatori
-		ModelFromServer modelP1 = new ModelFromServer(this.BOARD_SIZE);
+		ModelFromServer modelP1 = new ModelFromServer(this.BOARD_SIZE);	//crea matrici ecc
 		ModelFromServer modelP2 = new ModelFromServer(this.BOARD_SIZE);
 		
 		
@@ -46,8 +46,8 @@ public class Partita implements Runnable
 		{
 			nameP1 = (String)inputFromPlayer1.readObject();
 			nameP2 = (String)inputFromPlayer2.readObject();
-			System.out.println("Game " + numeroPartita + " started:\n" 
-				+ nameP1 + " (" + socketP1.getInetAddress()+ ":" + socketP1.getPort() + ") VS "+  nameP2 + " (" + socketP2.getInetAddress()+ ":"+ socketP2.getPort() + ") ");
+			System.out.println("Game " + numeroPartita + " started:\n" + nameP1 + " (" + socketP1.getInetAddress()
+			+ ":" + socketP1.getPort() + ") VS "+  nameP2 + " (" + socketP2.getInetAddress()+ ":"+ socketP2.getPort() + ") ");
 			
 			Vector<Nave> flottaP1 = modelP1.getFlotta();
 			Vector<Nave> flottaP2 = modelP2.getFlotta();
@@ -69,99 +69,91 @@ public class Partita implements Runnable
 			boolean partitaInCorso = true;
 			boolean turnoP1 = true;
 			
-			
+			outputToPlayer1.writeObject(partitaInCorso);	//informa i client se invierà dati
+			outputToPlayer2.writeObject(partitaInCorso);	//saranno true
 			
 			while(partitaInCorso)
 			{
-			
-				outputToPlayer1.writeObject(partitaInCorso);	//informa i client se invierà dati
-				outputToPlayer2.writeObject(partitaInCorso);	//sarà true
-				
 				if(turnoP1)
 				{
-					outputToPlayer1.writeObject(true);	//dice al player1 di mandare la casella
-					outputToPlayer2.writeObject(false);//dice al player 2 di non mandare la casella
+					outputToPlayer1.writeObject(turnoP1);	//dice al player1 di mandare la casella
+					outputToPlayer2.writeObject(!turnoP1);//dice al player 2 di non mandare la casella
 					
-					Point shot = (Point)inputFromPlayer1.readObject();	//aspetta un point dal client che ha il turno
+					Request request = (Request)inputFromPlayer1.readObject();	//aspetta un point dal client che ha il turno
 					
-					while(shot.equals(new Point(-1,-1)))	//se client non ha nuova cella invia -1,-1
+					if(request.getPlayer().equals(nameP1))
 					{
-						outputToPlayer1.writeObject(partitaInCorso);	//informa che la partita è in corrso
-						outputToPlayer1.writeObject(true);				//informa che è il suo turno
-						shot = (Point)inputFromPlayer1.readObject();
-					}
-					
-					if(shot.equals(new Point(9,9)))
-					{
-						partitaInCorso = false;
-					}
-					
-					//controlla dal player2 se player1 ha colpito
-					boolean colpito = modelP2.isGoodShot(shot);
-					if(colpito)
-					{
-						outputToPlayer1.writeObject(true);//gli dice che ha colpito
-						modelP1.setMatColpiti(BOARD_SIZE - shot.y, shot.x, ModelFromServer.COLPITO);
-					}
-					else//non colpito
-					{
-						outputToPlayer1.writeObject(false);//gli dice che non ha colpito
-						modelP1.setMatColpiti(BOARD_SIZE - shot.y, shot.x, ModelFromServer.ACQUA);
+						Vector<Request> buffer = new Vector<>();
+						buffer.addElement(request);
+						
+						request = buffer.elementAt(0);
+						
+						System.out.println("shot di p1 " + request.getPoint().x + "." + request.getPoint().y);
+						
+						//client controlla che punto inviato sia nella scacchiera e diverso dal precedente
+						//controlla dal player2 se player1 ha colpito
+						boolean colpito = modelP2.isGoodShot(request.getPoint());
+						
+						outputToPlayer1.writeObject(colpito);//gli dice se  ha colpito
+						int val;
+						//faccio così perchè mi serve un int
+						val = colpito ? ModelFromServer.COLPITO : ModelFromServer.ACQUA;
+						
+						modelP1.setMatColpiti(BOARD_SIZE - request.getPoint().y - 1, request.getPoint().x, val);
+						
+						buffer.clear();
 					}
 					
 					turnoP1 = !turnoP1;	//switch turn
 					
-//					if(false)	//mettere condizione che fa finire partita
-//					{
-//						partitaInCorso = false;
-//					}
+//					condizione di termine partita
+					if(request.getPoint().equals(new Point(9,9)))
+					{
+						partitaInCorso = false;
+					}
 				}
-				else//turno p2
+				else if(!turnoP1)//turno p2
 				{
-					outputToPlayer1.writeObject(false);//dice al player 1 di non mandare casella
-					outputToPlayer2.writeObject(true);	//dice al player2 di mandare la casella
+					//turnoP1 qua è falso -> turnoP2 vero
+					outputToPlayer1.writeObject(turnoP1);//dice al player 1 di non mandare casella
+					outputToPlayer2.writeObject(!turnoP1);	//dice al player2 di mandare la casella
 					
-					Point shot = (Point)inputFromPlayer2.readObject();
+					Request request = (Request)inputFromPlayer2.readObject();	//aspetta un point dal client che ha il turno
 					
-					while(shot.equals(new Point(-1,-1)))	//se client non ha nuova cella invia -1,-1
+					if(request.getPlayer().equals(nameP2))
 					{
-						outputToPlayer2.writeObject(partitaInCorso);	//informa che la partita è in corrso
-						outputToPlayer2.writeObject(true);				//informa che è il suo turno
-						shot = (Point)inputFromPlayer2.readObject();
+						Vector<Request> buffer = new Vector<>();
+						buffer.addElement(request);
+						
+						request = buffer.elementAt(0);
+						
+						System.out.println("shot di p2 " + request.getPoint().x + "." + request.getPoint().y);
+						
+						//client controlla che punto inviato sia nella scacchiera e diverso dal precedente
+						//controlla dal player2 se player1 ha colpito
+						boolean colpito = modelP1.isGoodShot(request.getPoint());
+								
+						outputToPlayer2.writeObject(colpito);//gli dice se  ha colpito
+						int val;
+						//faccio così perchè mi serve un int
+						val = colpito ? ModelFromServer.COLPITO : ModelFromServer.ACQUA;
+							
+						modelP2.setMatColpiti(BOARD_SIZE - request.getPoint().y - 1, request.getPoint().x, val);
+						
+						buffer.clear();
 					}
+					turnoP1 = !turnoP1;	//switch turn
 					
-					if(shot.equals(new Point(9,9)))	//condizione che termina partita
+					
+					//condizione che termina partita
+					if(request.getPoint().equals(new Point(9,9)))
 					{
 						partitaInCorso = false;
 					}
-					
-					//controlla dal player2 se player1 ha colpito
-					boolean colpito = modelP1.isGoodShot(shot);
-					if(colpito)
-					{
-						outputToPlayer2.writeObject(true);
-						modelP2.setMatColpiti(BOARD_SIZE - shot.y, shot.x, ModelFromServer.COLPITO);
-					}
-					else 
-					{
-						outputToPlayer2.writeObject(false);
-						modelP2.setMatColpiti(BOARD_SIZE - shot.y, shot.x, ModelFromServer.ACQUA);
-					}
-					
-					turnoP1 = !turnoP1;	//switch turn
-					
-//					if(false)	//mettere condizione che fa finire partita
-//					{
-//						partitaInCorso = false;
-//					}
-				}
-				
+				}	
 			}
 			outputToPlayer1.writeObject(partitaInCorso);	//informa i client se invierà dati
 			outputToPlayer2.writeObject(partitaInCorso);	//sarà false
-
-			
-			
 			
 //			chiusura dei buffer e del socket
 			inputFromPlayer1.close();
